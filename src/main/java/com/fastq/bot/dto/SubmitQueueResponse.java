@@ -1,28 +1,49 @@
 package com.fastq.bot.dto;
 
+import java.time.LocalDateTime;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
-/**
- * DTO for the submit queue API response ({@code /submitQueue.ashx}).
- * <p>
- * On success, returns a {@code queue_id} which can be used to track
- * or cancel the booking via {@code /cancelQueue.ashx}.
- */
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class SubmitQueueResponse {
 
+   private int result;
+
+    @JsonProperty("result_desc")
+    private String resultDesc;
+
     @JsonProperty("queue_id")
-    private String queueId;
+    private long queueId;
 
-    @JsonProperty("status")
-    private Integer status;
+    @JsonProperty("queue_number")
+    private String queueNumber;
 
-    @JsonProperty("message")
-    private String message;
+    @JsonProperty("number_of_waiting")
+    private int numberOfWaiting;
 
-    @JsonProperty("queue_no")
-    private String queueNo;
+    @JsonProperty("queue_datetime")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime queueDatetime;
+
+    @JsonProperty("fb_id")
+    private String fbId;
+
+    @JsonProperty("wait_seconds")
+    private int waitSeconds;
+
+    @JsonProperty("show_wait_seconds_flag")
+    private int showWaitSecondsFlag;
+
+    @JsonProperty("time_stamp")
+    private String timeStamp;
+
+    @JsonProperty("facebook_image_url")
+    private String facebookImageUrl;
+
+    @JsonProperty("coupon_id")
+    private int couponId;
 }

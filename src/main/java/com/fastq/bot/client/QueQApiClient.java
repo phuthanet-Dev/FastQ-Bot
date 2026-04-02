@@ -82,10 +82,13 @@ public class QueQApiClient {
         applyJitter("signUp");
 
         Map<String, Object> payload = Map.of(
-                "email", email,
-                "name", name,
+                "password_confirm", password,
                 "password", password,
-                "password_confirm", password
+                "gender", "",
+                "birth_date", "",
+                "email", email,
+                "telephone_no", "",
+                "name", name
         );
 
         HttpRequest request = buildJsonPostRequest(
@@ -125,7 +128,9 @@ public class QueQApiClient {
 
         Map<String, Object> payload = Map.of(
                 "email", email,
-                "password", password
+                "notify_token_ios", "",
+                "password", password,
+                "ios_production_flag", 1
         );
 
         HttpRequest request = buildJsonPostRequest(
@@ -196,30 +201,37 @@ public class QueQApiClient {
      * <p>
      * Endpoint: {@code POST https://api1.queq.me/reqBoardList.ashx}
      *
-     * @param boardToken Target shop board token
+     * @param userToken  Account user token
+     * @param latitude   GPS latitude near the target shop
+     * @param longitude  GPS longitude near the target shop
      * @param proxyHost  Optional proxy host
      * @param proxyPort  Optional proxy port
      * @return {@link BoardListResponse} with queue lines and counts
      * @throws Exception on HTTP or parsing errors
      */
-    public BoardListResponse checkBoardList(String boardToken,
+    public BoardListResponse checkBoardList(String userToken, double latitude, double longitude,
                                              String proxyHost, Integer proxyPort) throws Exception {
         applyJitter("checkBoardList");
 
         Map<String, Object> payload = Map.of(
-                "board_token", boardToken
+                "page_size", 500,
+                "page_number", 1,
+                "latitude", String.valueOf(latitude),
+                "user_token", userToken,
+                "longitude", String.valueOf(longitude),
+                "search_text", ""
         );
 
         HttpRequest request = buildJsonPostRequest(
                 HOST_API1 + "/reqBoardList.ashx",
                 payload,
-                null
+                userToken
         );
 
         HttpClient client = resolveClient(proxyHost, proxyPort);
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
-        log.debug("[BoardList] board={} | status={} | body={}", boardToken, response.statusCode(), response.body());
+        log.debug("[BoardList] status={} | body={}", response.statusCode(), response.body());
         checkResponseStatus(response);
 
         return objectMapper.readValue(response.body(), BoardListResponse.class);
@@ -279,23 +291,26 @@ public class QueQApiClient {
      * <p>
      * Endpoint: {@code POST https://api1.queq.me/submitQueue.ashx}
      *
+     * @param boardToken  The board (shop) token
      * @param userToken   The user_token from login
      * @param queueLineId The target queue line ID from boardList
-     * @param customerQty Number of customers (party size)
+     * @param seatCount   Number of seats (party size)
      * @param proxyHost   Optional proxy host
      * @param proxyPort   Optional proxy port
      * @return {@link SubmitQueueResponse} with queue_id on success
      * @throws Exception on HTTP or parsing errors
      */
-    public SubmitQueueResponse submitQueue(String userToken, String queueLineId,
-                                            int customerQty,
+    public SubmitQueueResponse submitQueue(String boardToken, String userToken, String queueLineId,
+                                            int seatCount,
                                             String proxyHost, Integer proxyPort) throws Exception {
         applyJitter("submitQueue");
 
         Map<String, Object> payload = Map.of(
+                "board_token", boardToken,
                 "user_token", userToken,
                 "queue_line_id", queueLineId,
-                "customer_qty", customerQty
+                "seat_count", seatCount,
+                "show_customer_flag", "1"
         );
 
         HttpRequest request = buildJsonPostRequest(
@@ -314,7 +329,47 @@ public class QueQApiClient {
     }
 
     // ──────────────────────────────────────────────
-    // 7. CANCEL QUEUE (Fallback)
+    // 7. REQUEST MY QUEUE DETAIL
+    // ──────────────────────────────────────────────
+
+    /**
+     * Fetches detailed information about the user's current queue reservation.
+     * <p>
+     * Endpoint: {@code POST https://api1.queq.me/QueQ/Customer_v3/reqMyQueueDetail.ashx}
+     *
+     * @param userToken The user_token from login
+     * @param queueId   The queue_id from submitQueue
+     * @param proxyHost Optional proxy host
+     * @param proxyPort Optional proxy port
+     * @return {@link MyQueueDetailResponse} with queue position and shop info
+     * @throws Exception on HTTP or parsing errors
+     */
+    public MyQueueDetailResponse reqMyQueueDetail(String userToken, long queueId,
+                                                   String proxyHost, Integer proxyPort) throws Exception {
+        applyJitter("reqMyQueueDetail");
+
+        Map<String, Object> payload = Map.of(
+                "user_token", userToken,
+                "queue_id", queueId
+        );
+
+        HttpRequest request = buildJsonPostRequest(
+                HOST_API1 + "/QueQ/Customer_v3/reqMyQueueDetail.ashx",
+                payload,
+                userToken
+        );
+
+        HttpClient client = resolveClient(proxyHost, proxyPort);
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+        log.info("[ReqMyQueueDetail] queueId={} | status={} | body={}", queueId, response.statusCode(), response.body());
+        checkResponseStatus(response);
+
+        return objectMapper.readValue(response.body(), MyQueueDetailResponse.class);
+    }
+
+    // ──────────────────────────────────────────────
+    // 8. CANCEL QUEUE (Fallback)
     // ──────────────────────────────────────────────
 
     /**
