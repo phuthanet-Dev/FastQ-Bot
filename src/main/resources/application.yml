@@ -6,9 +6,9 @@ spring:
   # PostgreSQL Datasource
   # ──────────────────────────────────────────────
   datasource:
-    url: jdbc:postgresql://localhost:5432/fastqbot
+    url: jdbc:postgresql://localhost:5432/postgres
     username: postgres
-    password: changeme
+    password: fq1234!@#
     hikari:
       maximum-pool-size: 10
       minimum-idle: 2

@@ -78,13 +78,13 @@ public class QueueAutomationService {
         List<AccountEntity> accounts = accountRepository.findAllByStatusNot(AccountStatus.BOOKED);
 
         if (accounts.isEmpty()) {
-            log.warn("⚠ No eligible accounts found (all BOOKED or none exist). Exiting.");
+            log.warn("! No eligible accounts found (all BOOKED or none exist). Exiting.");
             return;
         }
 
-        log.info("═══════════════════════════════════════════");
+        log.info("===========================================");
         log.info("  FastQ-Bot Starting: {} account(s) to process", accounts.size());
-        log.info("═══════════════════════════════════════════");
+        log.info("===========================================");
 
         CountDownLatch latch = new CountDownLatch(accounts.size());
 
@@ -93,7 +93,7 @@ public class QueueAutomationService {
                 try {
                     processAccount(account);
                 } catch (Exception e) {
-                    log.error("💀 Unhandled exception for account [{}]: {}",
+                    log.error("[ERROR] Unhandled exception for account [{}]: {}",
                             account.getEmail(), e.getMessage(), e);
                     markError(account, e.getMessage());
                 } finally {
@@ -109,9 +109,9 @@ public class QueueAutomationService {
             log.error("Main thread interrupted while waiting for accounts to complete");
         }
 
-        log.info("═══════════════════════════════════════════");
+        log.info("===========================================");
         log.info("  FastQ-Bot Finished: All accounts processed");
-        log.info("═══════════════════════════════════════════");
+        log.info("===========================================");
     }
 
     // ══════════════════════════════════════════════
@@ -123,9 +123,9 @@ public class QueueAutomationService {
      */
     private void processAccount(AccountEntity account) throws Exception {
         String email = account.getEmail();
-        log.info("──────────────────────────────────────");
-        log.info("▶ Processing account: {}", email);
-        log.info("──────────────────────────────────────");
+        log.info("--------------------------------------");
+        log.info("> Processing account: {}", email);
+        log.info("--------------------------------------");
 
         // Update status to WAITING
         account.setStatus(AccountStatus.WAITING);
@@ -146,15 +146,19 @@ public class QueueAutomationService {
 
             account.setIsRegistered(true);
             accountRepository.save(account);
-            log.info("[{}] ✓ Registration complete", email);
+            log.info("[{}] [OK] Registration complete", email);
         } else {
             log.info("[{}] Step 1: Already registered, skipping", email);
         }
 
         // ── Step 2: Authentication ──
-        log.info("[{}] Step 2: Logging in...", email);
-        performLogin(account);
-        log.info("[{}] ✓ Login complete, token acquired", email);
+        if (account.getUserToken() != null && !account.getUserToken().isBlank()) {
+            log.info("[{}] Step 2: Token exists, skipping login (will auto-refresh if expired)", email);
+        } else {
+            log.info("[{}] Step 2: Logging in...", email);
+            performLogin(account);
+            log.info("[{}] [OK] Login complete, token acquired", email);
+        }
 
         // ── Step 3: PDPA Consent (conditional) ──
         if (!Boolean.TRUE.equals(account.getIsPdpaAccepted())) {
@@ -169,7 +173,7 @@ public class QueueAutomationService {
 
             account.setIsPdpaAccepted(true);
             accountRepository.save(account);
-            log.info("[{}] ✓ PDPA accepted", email);
+            log.info("[{}] [OK] PDPA accepted", email);
         } else {
             log.info("[{}] Step 3: PDPA already accepted, skipping", email);
         }
@@ -179,7 +183,7 @@ public class QueueAutomationService {
                 email, account.getTargetBoardToken());
 
         String eligibleLineId = monitorQueueUntilReady(account);
-        log.info("[{}] ✓ Queue condition met! Eligible line: {}", email, eligibleLineId);
+        log.info("[{}] [OK] Queue condition met! Eligible line: {}", email, eligibleLineId);
 
         // ── Step 5: Anti-Fraud Bypass ──
         log.info("[{}] Step 5: Passing anti-fraud check...", email);
@@ -193,7 +197,7 @@ public class QueueAutomationService {
                     account.getProxyPort());
             return null;
         }, account, "Antifraud");
-        log.info("[{}] ✓ Anti-fraud passed", email);
+        log.info("[{}] [OK] Anti-fraud passed", email);
 
         // ── Step 6: Submit Queue ──
         log.info("[{}] Step 6: Submitting queue reservation...", email);
@@ -210,10 +214,10 @@ public class QueueAutomationService {
         account.setStatus(AccountStatus.BOOKED);
         accountRepository.save(account);
 
-        log.info("══════════════════════════════════════");
-        log.info("🎉 [{}] BOOKED! Queue ID: {} | Queue No: {}",
+        log.info("======================================");
+        log.info("[SUCCESS] [{}] BOOKED! Queue ID: {} | Queue No: {}",
                 email, submitResponse.getQueueId(), submitResponse.getQueueNumber());
-        log.info("══════════════════════════════════════");
+        log.info("======================================");
     }
 
     // ══════════════════════════════════════════════
@@ -249,7 +253,7 @@ public class QueueAutomationService {
                     int currentQueue = boad.getNumberOfWaiting();
                     boolean isOpen = boad.getPublicFlag() == 1 && boad.getQueueingStatus() == 1;
 
-                    log.info("[{}] Queue '{}' → current: {} | threshold: {} | open: {}",
+                    log.info("[{}] Queue '{}' ({}) → current: {} | threshold: {} | open: {}",
                             email, boad.getBoardName(), boad.getBoardLocation(), currentQueue, threshold, isOpen);
 
                     if (isOpen && currentQueue > 0 && currentQueue <= threshold) {
@@ -263,7 +267,7 @@ public class QueueAutomationService {
                 }
             }
 
-            log.info("[{}] ⏳ Queue condition not met. Polling again in {}s...",
+            log.info("[{}] [WAIT] Queue condition not met. Polling again in {}s...",
                     email, pollIntervalSeconds);
             Thread.sleep(pollIntervalSeconds * 1000L);
         }
@@ -399,12 +403,12 @@ public class QueueAutomationService {
     private void markError(AccountEntity account, String reason) {
         account.setStatus(AccountStatus.ERROR);
         accountRepository.save(account);
-        log.error("❌ [{}] Marked as ERROR: {}", account.getEmail(), reason);
+        log.error("! [{}] Marked as ERROR: {}", account.getEmail(), reason);
     }
 
-    // ══════════════════════════════════════════════
+    // ----------------------------------------------
     // FUNCTIONAL INTERFACE
-    // ══════════════════════════════════════════════
+    // ----------------------------------------------
 
     /**
      * Functional interface for a retryable action that may throw exceptions.

@@ -22,17 +22,24 @@ import java.util.concurrent.ThreadLocalRandom;
  * <p>
  * Responsibilities:
  * <ul>
- *   <li>Build and send HTTP requests to QueQ endpoints</li>
- *   <li>Inject the required {@code User-Agent} header on every request</li>
- *   <li>Apply random jitter (configurable delay) before each request to evade anti-bot detection</li>
- *   <li>Support per-account proxy overrides</li>
- *   <li>Parse JSON responses into typed DTOs</li>
+ * <li>Build and send HTTP requests to QueQ endpoints</li>
+ * <li>Inject the required {@code User-Agent} header on every request</li>
+ * <li>Apply random jitter (configurable delay) before each request to evade
+ * anti-bot detection</li>
+ * <li>Support per-account proxy overrides</li>
+ * <li>Parse JSON responses into typed DTOs</li>
  * </ul>
  *
  * <h3>Host Mapping</h3>
  * <table>
- *   <tr><td>api1.queq.me</td><td>signup, login, boardList, antifraud, submitQueue, cancelQueue</td></tr>
- *   <tr><td>api0-portal.queq.me</td><td>UpdatePDPA</td></tr>
+ * <tr>
+ * <td>api1.queq.me</td>
+ * <td>signup, login, boardList, antifraud, submitQueue, cancelQueue</td>
+ * </tr>
+ * <tr>
+ * <td>api0-portal.queq.me</td>
+ * <td>UpdatePDPA</td>
+ * </tr>
  * </table>
  */
 @Slf4j
@@ -68,9 +75,9 @@ public class QueQApiClient {
      * <p>
      * Endpoint: {@code POST https://api1.queq.me/QueQ/Customer_v3/signup.ashx}
      *
-     * @param email    Account email
-     * @param name     Display name
-     * @param password Account password
+     * @param email     Account email
+     * @param name      Display name
+     * @param password  Account password
      * @param proxyHost Optional per-account proxy host (nullable)
      * @param proxyPort Optional per-account proxy port (nullable)
      * @return Raw JSON response as a Map
@@ -78,7 +85,7 @@ public class QueQApiClient {
      */
     @SuppressWarnings("unchecked")
     public Map<String, Object> signUp(String email, String name, String password,
-                                       String proxyHost, Integer proxyPort) throws Exception {
+            String proxyHost, Integer proxyPort) throws Exception {
         applyJitter("signUp");
 
         Map<String, Object> payload = Map.of(
@@ -88,8 +95,7 @@ public class QueQApiClient {
                 "birth_date", "",
                 "email", email,
                 "telephone_no", "",
-                "name", name
-        );
+                "name", name);
 
         HttpRequest request = buildJsonPostRequest(
                 HOST_API1 + "/QueQ/Customer_v3/signup.ashx",
@@ -115,29 +121,27 @@ public class QueQApiClient {
      * <p>
      * Endpoint: {@code POST https://api1.queq.me/loginEmail.ashx}
      *
-     * @param email    Account email
-     * @param password Account password
+     * @param email     Account email
+     * @param password  Account password
      * @param proxyHost Optional per-account proxy host
      * @param proxyPort Optional per-account proxy port
      * @return {@link LoginResponse} containing the user_token
      * @throws Exception on HTTP or parsing errors
      */
     public LoginResponse login(String email, String password,
-                                String proxyHost, Integer proxyPort) throws Exception {
+            String proxyHost, Integer proxyPort) throws Exception {
         applyJitter("login");
 
         Map<String, Object> payload = Map.of(
                 "email", email,
                 "notify_token_ios", "",
                 "password", password,
-                "ios_production_flag", 1
-        );
+                "ios_production_flag", 1);
 
         HttpRequest request = buildJsonPostRequest(
-                HOST_API1 + "/loginEmail.ashx",
+                HOST_API1 + "/QueQ/Customer_v3/loginEmail.ashx",
                 payload,
-                null
-        );
+                null);
 
         HttpClient client = resolveClient(proxyHost, proxyPort);
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
@@ -155,7 +159,8 @@ public class QueQApiClient {
     /**
      * Accepts PDPA (Personal Data Protection Act) consent.
      * <p>
-     * Endpoint: {@code POST https://api0-portal.queq.me/QueqPortal/Customer/UpdatePDPA}
+     * Endpoint:
+     * {@code POST https://api0-portal.queq.me/QueqPortal/Customer/UpdatePDPA}
      * <br>
      * Requires special header: {@code X-QueqPortal-UserToken}
      *
@@ -167,7 +172,7 @@ public class QueQApiClient {
      */
     @SuppressWarnings("unchecked")
     public Map<String, Object> acceptPdpa(String userToken,
-                                           String proxyHost, Integer proxyPort) throws Exception {
+            String proxyHost, Integer proxyPort) throws Exception {
         applyJitter("acceptPdpa");
 
         String jsonBody = objectMapper.writeValueAsString(Map.of("status", 1));
@@ -201,16 +206,16 @@ public class QueQApiClient {
      * <p>
      * Endpoint: {@code POST https://api1.queq.me/reqBoardList.ashx}
      *
-     * @param userToken  Account user token
-     * @param latitude   GPS latitude near the target shop
-     * @param longitude  GPS longitude near the target shop
-     * @param proxyHost  Optional proxy host
-     * @param proxyPort  Optional proxy port
+     * @param userToken Account user token
+     * @param latitude  GPS latitude near the target shop
+     * @param longitude GPS longitude near the target shop
+     * @param proxyHost Optional proxy host
+     * @param proxyPort Optional proxy port
      * @return {@link BoardListResponse} with queue lines and counts
      * @throws Exception on HTTP or parsing errors
      */
     public BoardListResponse checkBoardList(String userToken, double latitude, double longitude,
-                                             String proxyHost, Integer proxyPort) throws Exception {
+            String proxyHost, Integer proxyPort) throws Exception {
         applyJitter("checkBoardList");
 
         Map<String, Object> payload = Map.of(
@@ -219,14 +224,12 @@ public class QueQApiClient {
                 "latitude", String.valueOf(latitude),
                 "user_token", userToken,
                 "longitude", String.valueOf(longitude),
-                "search_text", ""
-        );
+                "search_text", "");
 
         HttpRequest request = buildJsonPostRequest(
-                HOST_API1 + "/reqBoardList.ashx",
+                HOST_API1 + "/QueQ/Customer_v3/reqBoardList.ashx",
                 payload,
-                userToken
-        );
+                userToken);
 
         HttpClient client = resolveClient(proxyHost, proxyPort);
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
@@ -246,32 +249,24 @@ public class QueQApiClient {
      * <p>
      * Endpoint: {@code POST https://api1.queq.me/Queue/Antifraud}
      *
-     * @param userToken The user_token from login
      * @param udid      Device UDID (UUID v4 upper case, locked to account)
-     * @param lat       GPS latitude near the target shop
-     * @param lon       GPS longitude near the target shop
      * @param proxyHost Optional proxy host
      * @param proxyPort Optional proxy port
      * @return {@link AntifraudResponse}
      * @throws Exception on HTTP or parsing errors
      */
     public AntifraudResponse passAntifraud(String userToken, String udid,
-                                            double lat, double lon,
-                                            String proxyHost, Integer proxyPort) throws Exception {
+            double lat, double lon,
+            String proxyHost, Integer proxyPort) throws Exception {
         applyJitter("passAntifraud");
 
         Map<String, Object> payload = Map.of(
-                "user_token", userToken,
-                "UDID", udid,
-                "lat", String.valueOf(lat),
-                "lon", String.valueOf(lon)
-        );
+                "UDID", udid);
 
         HttpRequest request = buildJsonPostRequest(
-                HOST_API1 + "/Queue/Antifraud",
+                HOST_API1 + "/QueQ_AddOn_API/Queue/Antifraud",
                 payload,
-                userToken
-        );
+                userToken);
 
         HttpClient client = resolveClient(proxyHost, proxyPort);
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
@@ -301,8 +296,8 @@ public class QueQApiClient {
      * @throws Exception on HTTP or parsing errors
      */
     public SubmitQueueResponse submitQueue(String boardToken, String userToken, String queueLineId,
-                                            int seatCount,
-                                            String proxyHost, Integer proxyPort) throws Exception {
+            int seatCount,
+            String proxyHost, Integer proxyPort) throws Exception {
         applyJitter("submitQueue");
 
         Map<String, Object> payload = Map.of(
@@ -310,14 +305,12 @@ public class QueQApiClient {
                 "user_token", userToken,
                 "queue_line_id", queueLineId,
                 "seat_count", seatCount,
-                "show_customer_flag", "1"
-        );
+                "show_customer_flag", "1");
 
         HttpRequest request = buildJsonPostRequest(
-                HOST_API1 + "/submitQueue.ashx",
+                HOST_API1 + "/QueQ/Customer_v3/submitQueue.ashx",
                 payload,
-                userToken
-        );
+                userToken);
 
         HttpClient client = resolveClient(proxyHost, proxyPort);
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
@@ -335,7 +328,8 @@ public class QueQApiClient {
     /**
      * Fetches detailed information about the user's current queue reservation.
      * <p>
-     * Endpoint: {@code POST https://api1.queq.me/QueQ/Customer_v3/reqMyQueueDetail.ashx}
+     * Endpoint:
+     * {@code POST https://api1.queq.me/QueQ/Customer_v3/reqMyQueueDetail.ashx}
      *
      * @param userToken The user_token from login
      * @param queueId   The queue_id from submitQueue
@@ -345,24 +339,23 @@ public class QueQApiClient {
      * @throws Exception on HTTP or parsing errors
      */
     public MyQueueDetailResponse reqMyQueueDetail(String userToken, long queueId,
-                                                   String proxyHost, Integer proxyPort) throws Exception {
+            String proxyHost, Integer proxyPort) throws Exception {
         applyJitter("reqMyQueueDetail");
 
         Map<String, Object> payload = Map.of(
                 "user_token", userToken,
-                "queue_id", queueId
-        );
+                "queue_id", queueId);
 
         HttpRequest request = buildJsonPostRequest(
                 HOST_API1 + "/QueQ/Customer_v3/reqMyQueueDetail.ashx",
                 payload,
-                userToken
-        );
+                userToken);
 
         HttpClient client = resolveClient(proxyHost, proxyPort);
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
-        log.info("[ReqMyQueueDetail] queueId={} | status={} | body={}", queueId, response.statusCode(), response.body());
+        log.info("[ReqMyQueueDetail] queueId={} | status={} | body={}", queueId, response.statusCode(),
+                response.body());
         checkResponseStatus(response);
 
         return objectMapper.readValue(response.body(), MyQueueDetailResponse.class);
@@ -386,19 +379,17 @@ public class QueQApiClient {
      */
     @SuppressWarnings("unchecked")
     public Map<String, Object> cancelQueue(String userToken, String queueId,
-                                            String proxyHost, Integer proxyPort) throws Exception {
+            String proxyHost, Integer proxyPort) throws Exception {
         applyJitter("cancelQueue");
 
         Map<String, Object> payload = Map.of(
                 "user_token", userToken,
-                "queue_id", queueId
-        );
+                "queue_id", queueId);
 
         HttpRequest request = buildJsonPostRequest(
-                HOST_API1 + "/cancelQueue.ashx",
+                HOST_API1 + "/QueQ/Customer_v3/cancelQueue.ashx",
                 payload,
-                userToken
-        );
+                userToken);
 
         HttpClient client = resolveClient(proxyHost, proxyPort);
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
@@ -422,7 +413,7 @@ public class QueQApiClient {
      * @return Configured HttpRequest
      */
     private HttpRequest buildJsonPostRequest(String url, Map<String, Object> payload,
-                                              String authToken) throws Exception {
+            String authToken) throws Exception {
         String jsonBody = objectMapper.writeValueAsString(payload);
 
         HttpRequest.Builder builder = HttpRequest.newBuilder()
@@ -432,14 +423,19 @@ public class QueQApiClient {
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(jsonBody));
 
+        if (authToken != null && !authToken.isBlank()) {
+            builder.header("x-queq-usertoken", authToken);
+        }
+
         return builder.build();
     }
 
     /**
      * Resolves which HttpClient to use:
      * <ul>
-     *   <li>If per-account proxy is set → create a dedicated HttpClient with that proxy</li>
-     *   <li>Otherwise → use the default (global) HttpClient bean</li>
+     * <li>If per-account proxy is set → create a dedicated HttpClient with that
+     * proxy</li>
+     * <li>Otherwise → use the default (global) HttpClient bean</li>
      * </ul>
      */
     private HttpClient resolveClient(String proxyHost, Integer proxyPort) {
@@ -501,7 +497,8 @@ public class QueQApiClient {
 
     /**
      * Exception that carries the HTTP status code for the service layer
-     * to implement differentiated error handling (retry vs re-login vs kill-switch).
+     * to implement differentiated error handling (retry vs re-login vs
+     * kill-switch).
      */
     public static class HttpResponseException extends Exception {
         private final int statusCode;

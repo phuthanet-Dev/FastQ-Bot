@@ -28,11 +28,11 @@ public class BotCommandLineRunner implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        log.info("┌─────────────────────────────────────┐");
-        log.info("│     FastQ-Bot v1.0.0 Starting...    │");
-        log.info("│     Java 21 Virtual Threads         │");
-        log.info("│     1 Account = 1 Target Shop       │");
-        log.info("└─────────────────────────────────────┘");
+        log.info("+-------------------------------------+");
+        log.info("|     FastQ-Bot v1.0.0 Starting...    |");
+        log.info("|     Java 21 Virtual Threads         |");
+        log.info("|     1 Account = 1 Target Shop       |");
+        log.info("+-------------------------------------+");
 
         queueAutomationService.processAllAccounts();
     }
