@@ -1,0 +1,26 @@
+spring:
+  application:
+    name: FastQ-Bot-Test
+  datasource:
+    url: jdbc:h2:mem:testdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    database-platform: org.hibernate.dialect.H2Dialect
+
+bot:
+  user-agent: "QueQ/4.16.46 (iPhone; iOS 26.3; Scale/3.00)"
+  jitter:
+    min-seconds: 0
+    max-seconds: 0
+  proxy:
+    enabled: false
+    host: ""
+    port: 0
+  retry:
+    max-attempts: 1
+    backoff-seconds: [1]
+  poll-interval-seconds: 1

@@ -1,0 +1,68 @@
+spring:
+  application:
+    name: FastQ-Bot
+
+  # ──────────────────────────────────────────────
+  # PostgreSQL Datasource
+  # ──────────────────────────────────────────────
+  datasource:
+    url: jdbc:postgresql://localhost:5432/fastqbot
+    username: postgres
+    password: changeme
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+
+  # ──────────────────────────────────────────────
+  # JPA / Hibernate
+  # ──────────────────────────────────────────────
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+
+  # ──────────────────────────────────────────────
+  # Enable Virtual Threads for Spring MVC
+  # ──────────────────────────────────────────────
+  threads:
+    virtual:
+      enabled: true
+
+# ──────────────────────────────────────────────
+# Bot Configuration
+# ──────────────────────────────────────────────
+bot:
+  user-agent: "QueQ/4.16.46 (iPhone; iOS 26.3; Scale/3.00)"
+
+  # Anti-detection jitter (random delay between requests)
+  jitter:
+    min-seconds: 5
+    max-seconds: 30
+
+  # Global proxy (optional, can be overridden per-account)
+  proxy:
+    enabled: false
+    host: ""
+    port: 0
+
+  # Retry policy
+  retry:
+    max-attempts: 3
+    backoff-seconds: [5, 10, 15]
+
+  # Queue monitoring poll interval (seconds) between board-list checks
+  poll-interval-seconds: 10
+
+# ──────────────────────────────────────────────
+# Logging
+# ──────────────────────────────────────────────
+logging:
+  level:
+    com.fastq.bot: DEBUG
+    org.hibernate.SQL: DEBUG
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
